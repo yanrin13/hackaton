@@ -1,0 +1,28 @@
+env: "local" #local, dev, prod
+storage_path: "./storage/storage.db"
+migrations_path: "./migration"
+
+http_server:
+  address: "0.0.0.0:8888"
+  timeout: 4s
+  idle_timeout: 60s
+
+postgresql:
+  user: user
+  password: password
+  dbname: mydatabase
+  sslmode: disable 
+  host: localhost
+  port: 5432
+
+kafka:
+  brokers: ["localhost:9092"]
+  consumer_group: orders-group
+  topic: orders
+  dlq_topic: "DLQ"
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
