@@ -1,54 +1,61 @@
-import { Chart as ChartJS } from 'chart.js/auto'
-import { Bar } from 'react-chartjs-2'
-import { useState, useEffect } from 'react'
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Bar } from "react-chartjs-2";
 
 export default function BarChart({ data }) {
     const ALL_MONTHS = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
-    const ALL_DATA1 = [40, 55, 90, 140, 220, 310, 420, 380, 260, 290, 360, 480];
-    const ALL_DATA2 = [10, 18, 35, 60, 120, 210, 350, 300, 180, 230, 320, 520];
-
-    const [months, setMonths] = useState(ALL_MONTHS);
-    const [data1, setData1] = useState(ALL_DATA1);
-    const [data2, setData2] = useState(ALL_DATA2);
-
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
-    const chartData = data || {}
-
-    const labels = Object.keys(chartData)
-    const values = Object.values(chartData)
-    console.log(labels)
-    console.log(values)
+    const [labels, setLabels] = useState([]);
+    const [values, setValues] = useState([]);
+    const [keys, setKeys] = useState([]); // хранит YYYY-MM для фильтра
 
     useEffect(() => {
-        if (!from || !to) return;
+        if (!data) return;
 
-        const fromIdx = Number(from.slice(5)) - 1;
-        const toIdx = Number(to.slice(5));
+        const monthly = {};
+        Object.entries(data).forEach(([date, value]) => {
+            const [year, month] = date.split("-");
+            const key = `${year}-${month}`; // YYYY-MM
+            monthly[key] = (monthly[key] || 0) + value;
+        });
 
-        setMonths(ALL_MONTHS.slice(fromIdx, toIdx));
-        setData1(ALL_DATA1.slice(fromIdx, toIdx));
-        setData2(ALL_DATA2.slice(fromIdx, toIdx));
-    }, [from, to]);
+        const sortedKeys = Object.keys(monthly).sort();
 
-    const navigate = useNavigate();
+        const newLabels = [];
+        const newValues = [];
+        sortedKeys.forEach(key => {
+            const [year, month] = key.split("-");
+            newLabels.push(`${ALL_MONTHS[Number(month) - 1]} ${year}`);
+            newValues.push(monthly[key]);
+        });
+
+        setKeys(sortedKeys);
+        setLabels(newLabels);
+        setValues(newValues);
+    }, [data]);
+
+    // Фильтруем по выбранному диапазону YYYY-MM
+    const filteredLabels = labels.filter((_, idx) => {
+        if (!from || !to) return true;
+        return keys[idx] >= from && keys[idx] <= to;
+    });
+
+    const filteredValues = values.filter((_, idx) => {
+        if (!from || !to) return true;
+        return keys[idx] >= from && keys[idx] <= to;
+    });
 
     return (
         <>
             <div className="chart-area">
                 <Bar
                     data={{
-                        labels: months,
+                        labels: filteredLabels,
                         datasets: [{
-                            "label": "Проблемы",
-                            "data": data1
-                        },
-                        {
-                            "label": "Решения",
-                            "data": data2
-                        }
-                        ],
+                            label: "Количество",
+                            data: filteredValues,
+                            backgroundColor: "#87ABFE"
+                        }]
                     }}
                     options={{
                         responsive: true,
@@ -56,7 +63,8 @@ export default function BarChart({ data }) {
                     }}
                 />
             </div>
-            <div className='charts__description'>
+
+            <div className="charts__description">
                 <label>
                     С:
                     <input type="month" value={from} onChange={e => setFrom(e.target.value)} />
@@ -68,5 +76,5 @@ export default function BarChart({ data }) {
                 </label>
             </div>
         </>
-    )
+    );
 }

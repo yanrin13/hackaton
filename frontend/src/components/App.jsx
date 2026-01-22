@@ -19,16 +19,15 @@ export default function App() {
     const [periodData, setPeriodData] = useState({})
 
     useEffect(() => {
-        fetch('http://localhost:8888/api/analitic/categories')
+        fetch('api/analitic/categories')
             .then(r => r.json())
             .then(setCategoriesData)
             .catch(console.error)
-
-        fetch('http://localhost:8888/api/analitic/district')
+        fetch('api/analitic/district')
             .then(r => r.json())
             .then(setDistrictData)
             .catch(console.error)
-        fetch('http://localhost:8888/api/analitic/period')
+        fetch('api/analitic/period')
             .then(r => r.json())
             .then(setPeriodData)
             .catch(console.error)

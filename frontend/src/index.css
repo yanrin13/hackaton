@@ -21,7 +21,7 @@ html {
 }
 
 body {
-  background-color: var(--color1);
+  background: linear-gradient(to top, #d0e2f0 0%, var(--color1) 60%);
   display: flex;
   flex-direction: column;
   height: 100%;
