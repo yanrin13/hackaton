@@ -6,23 +6,21 @@ import email from '../assets/email.svg'
 import phone from '../assets/phone.svg'
 import tg from '../assets/tg.svg'
 import logo from '../assets/icon.svg'
-import LoginModal from './Modal/LoginModal'
+import Admin from './AdminPanel/Admin';
 import RequestModal from './Modal/RequestModal'
 
 export default function App() {
     const [mapOpen, setMapOpen] = useState(false)
-    const [loginOpen, setLoginOpen] = useState(false)
     const [requestOpen, setRequestOpen] = useState(false)
 
-    const [categoriesData, setCategoriesData] = useState({})
+    const [selectedDistrict, setSelectedDistrict] = useState('1');
+    const [categoriesData, setCategoriesData] = useState({});
     const [districtData, setDistrictData] = useState({})
     const [periodData, setPeriodData] = useState({})
 
+    const [adminOpen, setAdminOpen] = useState(false);
+
     useEffect(() => {
-        fetch('api/analitic/categories')
-            .then(r => r.json())
-            .then(setCategoriesData)
-            .catch(console.error)
         fetch('api/analitic/district')
             .then(r => r.json())
             .then(setDistrictData)
@@ -31,7 +29,17 @@ export default function App() {
             .then(r => r.json())
             .then(setPeriodData)
             .catch(console.error)
+        fetch(`api/analitic/categories/1`)
+            .then(res => res.json())
+            .then(data => setCategoriesData(data))
+            .catch(console.error);
     }, [])
+    useEffect(() => {
+        fetch(`api/analitic/categories/${selectedDistrict}`)
+            .then(res => res.json())
+            .then(data => setCategoriesData(data))
+            .catch(console.error);
+    }, [selectedDistrict]);
     return (
         <div className="content">
             <div className="sidebar">
@@ -46,6 +54,10 @@ export default function App() {
                 <div className='sidebar__btn'
                     onClick={() => setRequestOpen(true)}
                 >Оставить заявку</div>
+                <div className='sidebar__btn' onClick={() => setAdminOpen(true)}>
+                    Админ панель
+                </div>
+
                 <div className="sidebar__contacts">
                     <h2 className='contacts__title'>Контакты</h2>
                     <ul className='sidebar__contacts-list'>
@@ -69,10 +81,14 @@ export default function App() {
                     onClose={() => setRequestOpen(false)}
                 />
             )}
+            {adminOpen && <Admin onClose={() => setAdminOpen(false)} />}
+
             {mapOpen ? <MapComponent /> : <Content
                 categoriesData={categoriesData}
                 districtData={districtData}
                 periodData={periodData}
+                selectedDistrict={selectedDistrict}
+                setSelectedDistrict={setSelectedDistrict}
             />}
             <ToastContainer />
         </div>

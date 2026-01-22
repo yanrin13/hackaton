@@ -2,7 +2,7 @@ import BarChart from "./Charts/BarChart"
 import DonutChart from "./Charts/DonutChart"
 import LineChart from "./Charts/LineChart"
 
-export default function Content({ categoriesData, districtData, periodData }) {
+export default function Content({ categoriesData, districtData, periodData, selectedDistrict, setSelectedDistrict }) {
 
     return (
         <>
@@ -12,6 +12,34 @@ export default function Content({ categoriesData, districtData, periodData }) {
                 </div>
                 <div className='charts__chart card-b'>
                     <DonutChart data={categoriesData} />
+                    <div className="charts__description">
+                        <select
+                            className='modal-window__selection'
+                            style={{ maxWidth: '200px' }}
+                            value={selectedDistrict}
+                            onChange={e => setSelectedDistrict(e.target.value)}
+                        >
+                            <option value="1">Все районы</option>
+                            <option value="Адмиралтейский">Адмиралтейский</option>
+                            <option value="Василеостровский">Василеостровский</option>
+                            <option value="Выборгский">Выборгский</option>
+                            <option value="Калининский">Калининский</option>
+                            <option value="Кировский">Кировский</option>
+                            <option value="Колпинский">Колпинский</option>
+                            <option value="Красногвардейский">Красногвардейский</option>
+                            <option value="Красносельский">Красносельский</option>
+                            <option value="Кронштадтский">Кронштадтский</option>
+                            <option value="Курортный">Курортный</option>
+                            <option value="Московский">Московский</option>
+                            <option value="Невский">Невский</option>
+                            <option value="Петроградский">Петроградский</option>
+                            <option value="Петродворцовый">Петродворцовый</option>
+                            <option value="Приморский">Приморский</option>
+                            <option value="Пушкинский">Пушкинский</option>
+                            <option value="Фрунзенский">Фрунзенский</option>
+                            <option value="Центральный">Центральный</option>
+                        </select>
+                    </div>
                 </div>
                 <div className='charts__chart card-e'>
                     <LineChart data={districtData} />
@@ -28,9 +56,6 @@ export default function Content({ categoriesData, districtData, periodData }) {
                         <p></p>
                     </div>
                 </div>
-                {/* <input type="file"
-                    accept='.json'
-                /> */}
             </div>
         </>
     )

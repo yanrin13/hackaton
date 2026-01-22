@@ -67,12 +67,12 @@ export default function BarChart({ data }) {
             <div className="charts__description">
                 <label>
                     С:
-                    <input type="month" value={from} onChange={e => setFrom(e.target.value)} />
+                    <input className="charts__date" type="month" value={from} onChange={e => setFrom(e.target.value)} />
                 </label>
 
                 <label>
                     По:
-                    <input type="month" value={to} onChange={e => setTo(e.target.value)} />
+                    <input className="charts__date" type="month" value={to} onChange={e => setTo(e.target.value)} />
                 </label>
             </div>
         </>

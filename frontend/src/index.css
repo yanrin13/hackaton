@@ -257,10 +257,6 @@ ul {
   grid-area: e;
 }
 
-
-
-
-
 .charts__description {
   display: flex;
   gap: 10px;
@@ -273,11 +269,6 @@ ul {
   display: flex;
   gap: 6px;
   align-items: center;
-}
-
-.charts__description input {
-  max-width: 100px;
-  width: 100%;
 }
 
 .btn {
@@ -404,4 +395,111 @@ form {
   cursor: pointer;
   flex-shrink: 0;
   margin-left: clamp(6px, 2vw, 8px);
+}
+
+.task-panel {
+  background: var(--color1);
+  padding: 20px;
+  border-radius: 12px;
+  width: 400px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.task-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.task-panel__import {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color4);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color3);
+}
+
+.task-panel__import input {
+  display: none;
+}
+
+.task-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.task-panel__empty {
+  text-align: center;
+  color: var(--color2);
+}
+
+.task-panel__task {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color4);
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 0.1s;
+}
+
+.task-panel__task:hover {
+  transform: translateY(-2px);
+}
+
+.task-panel__info h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: var(--text-color);
+}
+
+.task-panel__info p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color3);
+}
+
+.task-panel__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.task-panel__accept,
+.task-panel__reject {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.task-panel__accept {
+  background: var(--color2);
+}
+
+.task-panel__reject {
+  background: #e74c3c;
+  /* красный крестик */
+}
+
+.charts__date {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color4);
+  border-radius: clamp(8px, 1vw, 10px);
+  padding: 0 clamp(8px, 2vw, 10px);
+  box-sizing: border-box;
+  height: clamp(15px, 6vw, 45px);
+  width: 100%;
 }
