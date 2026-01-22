@@ -40,25 +40,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	orderRepo := postgres.MustLoad(log, db, cfg.MigrationsPath)
+	statementRepo := postgres.MustLoad(log, db, cfg.MigrationsPath)
 
 	redisConn := redis.MustLoad(log, cfg.Redis.Host, cfg.Redis.Port, cfg.Redis.Password, cfg.DB)
 
 	kafkaProducer := kafka.MustProducer(log, cfg.Brokers, cfg.Topic)
 
-	orderUseCase := usecase.NewOrderUseCase(orderRepo, redisConn, kafkaProducer)
-
-	kafkaConsumer := kafka.NewConsumer(cfg.Brokers, cfg.ConsumerGroup, cfg.Topic, cfg.DLQTopic)
+	orderUseCase := usecase.NewStatementUseCase(statementRepo, redisConn, kafkaProducer)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	g, ctx := errgroup.WithContext(ctx)
-
-	g.Go(func() error {
-		log.Info("starting Kafka consumer")
-		return kafkaConsumer.Start(ctx, orderUseCase.HandleMessage)
-	})
 
 	router := chi.NewRouter()
 

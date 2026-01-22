@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -38,10 +39,10 @@ func MustLoad(log *slog.Logger, host, port, password string, DB int) *Redis {
 }
 
 // GetOrder retrieves an order by its orderUID from the database.
-func (r *Redis) GetOrder(ctx context.Context, orderUID string) ([]byte, error) {
-	const op = "storage.redis.GetOrder"
+func (r *Redis) GetStatement(ctx context.Context, statementUID int) ([]byte, error) {
+	const op = "storage.redis.GetStatement"
 
-	key := orderUID
+	key := strconv.Itoa(statementUID)
 
 	data, err := r.Client.Get(ctx, key).Bytes()
 	if err != nil {
@@ -55,10 +56,10 @@ func (r *Redis) GetOrder(ctx context.Context, orderUID string) ([]byte, error) {
 }
 
 // SetOrder adds a new order to the Redis or returns an error.
-func (r *Redis) SetOrder(ctx context.Context, orderUID string, data []byte, ttl time.Duration) error {
-	const op = "storage.redis.SetOrder"
+func (r *Redis) SetStatement(ctx context.Context, statementUID int, data []byte, ttl time.Duration) error {
+	const op = "storage.redis.SetStatement"
 
-	key := orderUID
+	key := strconv.Itoa(statementUID)
 
 	err := r.Client.Set(ctx, key, data, ttl).Err()
 	if err != nil {
@@ -69,10 +70,10 @@ func (r *Redis) SetOrder(ctx context.Context, orderUID string, data []byte, ttl 
 }
 
 // DeleteOrder deletes the order from Redis or returns an error.
-func (r *Redis) DeleteOrder(ctx context.Context, orderUID string) error {
-	const op = "storage.redis.DeleteOrder"
+func (r *Redis) DeleteStatement(ctx context.Context, statementUID int) error {
+	const op = "storage.redis.DeleteStatement"
 
-	key := orderUID
+	key := strconv.Itoa(statementUID)
 
 	err := r.Client.Del(ctx, key).Err()
 	if err != nil {

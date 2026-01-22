@@ -1,14 +1,15 @@
-// Package handlers contains HTTP handlers for the WB backend API.
+// Package handlers contains HTTP handlers for the hack backend API.
 // It uses chi router and provides endpoints for order operations.
 package handlers
 
 import (
-	resp "WB/internal/lib/api/response"
-	"WB/internal/models"
-	usecase "WB/internal/usecase"
 	"context"
+	resp "hack/internal/lib/api/response"
+	"hack/internal/models"
+	usecase "hack/internal/usecase"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
@@ -17,7 +18,7 @@ import (
 
 // NewOrder returns HTTP handler for creating a new order.
 // It decodes JSON request body, validates it via use case and returns appropriate response.
-func NewStatement(log *slog.Logger, orderUseCase *usecase.OrderUseCase) http.HandlerFunc {
+func NewStatement(log *slog.Logger, statementUseCase *usecase.StatementUseCase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.order.NewOrder"
 
@@ -49,7 +50,7 @@ func NewStatement(log *slog.Logger, orderUseCase *usecase.OrderUseCase) http.Han
 
 // GetOrder returns HTTP handler for retrieving an order by ID.
 // It extracts order ID from URL parameters and returns the order or error.
-func GetStatement(log *slog.Logger, statementUseCase *usecase.OrderUseCase) http.HandlerFunc {
+func GetStatement(log *slog.Logger, statementUseCase *usecase.StatementUseCase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.order.GetOrder"
 
@@ -61,13 +62,14 @@ func GetStatement(log *slog.Logger, statementUseCase *usecase.OrderUseCase) http
 		)
 
 		//error track
-		statementID := chi.URLParam(r, "id")
-		if statementID == "" {
+		statementUID := chi.URLParam(r, "id")
+		if statementUID == "" {
 			http.Error(w, "id parameter missing", http.StatusBadRequest)
 			return
 		}
+		key, _ := strconv.Atoi(statementUID)
 
-		statement, err := statementUseCase.GetStatement(context.Background(), OrderID)
+		statement, err := statementUseCase.GetStatement(context.Background(), key)
 		if err != nil {
 			log.Error("failed to unmarshal order", "op", op, "error", err)
 			render.JSON(w, r, resp.Error(err.Error()))

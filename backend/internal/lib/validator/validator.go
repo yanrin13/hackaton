@@ -1,7 +1,7 @@
 package validator
 
 import (
-	"WB/internal/models"
+	"hack/internal/models"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -9,9 +9,9 @@ import (
 var validate *validator.Validate
 
 func init() {
-    validate = validator.New()
+	validate = validator.New()
 }
 
-func ValidateOrder(statement *models.Statement) error {
-    return validate.Struct(order)
+func ValidateStatement(statement *models.Statement) error {
+	return validate.Struct(statement)
 }

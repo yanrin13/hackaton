@@ -3,10 +3,11 @@
 package postgres
 
 import (
-	"WB/internal/models"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"hack/internal/models"
 	"log/slog"
 	"os"
 	"time"
@@ -35,6 +36,7 @@ func MustLoad(log *slog.Logger, db *sql.DB, migrationsPath string) *Storage {
 	}
 
 	if err := runMigrations(db, migrationsPath); err != nil {
+		fmt.Println(err.Error())
 		log.Error("%s: failed to apply database migrations", op, slog.String("error", err.Error()))
 		os.Exit(1)
 	}
@@ -59,134 +61,82 @@ func runMigrations(db *sql.DB, migrationsPath string) error {
 	return nil
 }
 
-// NewOrder adds a new order to the database or returns an error.
-func (s *Storage) NewOrder(order models.Order) error {
-	const op = "storage.postgres.NewOrder"
+func (s *Storage) NewStatement(stmt models.Statement) error {
+	const op = "storage.postgres.NewStatement"
 
-	tx, err := s.db.BeginTx(context.Background(), nil)
+	ctx := context.Background()
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("%s: begin transaction: %w", op, err)
+		return fmt.Errorf("%s: begin tx: %w", op, err)
 	}
 	defer tx.Rollback()
 
-	// 1. Delivery
-	_, err = tx.Exec(`
-        INSERT INTO delivery (order_uid, name, phone, zip, city, address, region, email)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        ON CONFLICT (order_uid) DO NOTHING`,
-		order.OrderUID, order.Delivery.Name, order.Delivery.Phone, order.Delivery.Zip,
-		order.Delivery.City, order.Delivery.Address, order.Delivery.Region, order.Delivery.Email)
-	if err != nil {
-		return fmt.Errorf("%s: insert delivery: %w", op, err)
-	}
+	// Вставляем запись
+	_, err = tx.ExecContext(ctx, `
+	INSERT INTO statement (
+	source, district, category, subcategory,
+	created_at, status, description
+	) VALUES ($1, $2, $3, $4, $5, $6, $7)
+	ON CONFLICT DO NOTHING`,
+		stmt.Source,
+		stmt.District,
+		stmt.Category,
+		stmt.Subcategory,
+		stmt.CreatedAt,
+		stmt.Status,
+		stmt.Description,
+	)
 
-	// 2. Payment
-	_, err = tx.Exec(`
-        INSERT INTO payment (transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        ON CONFLICT (transaction) DO NOTHING`,
-		order.Payment.Transaction, order.Payment.RequestID, order.Payment.Currency, order.Payment.Provider,
-		order.Payment.Amount, order.Payment.PaymentDt, order.Payment.Bank, order.Payment.DeliveryCost,
-		order.Payment.GoodsTotal, order.Payment.CustomFee)
 	if err != nil {
-		return fmt.Errorf("%s: insert payment: %w", op, err)
-	}
-
-	// 3. Orders
-	_, err = tx.Exec(`
-        INSERT INTO orders (order_uid, track_number, entry, delivery_uid, payment_transaction, locale, internal_signature, customer_id, delivery_service, shardkey, sm_id, date_created, oof_shard)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        ON CONFLICT (order_uid) DO NOTHING`,
-		order.OrderUID, order.TrackNumber, order.Entry, order.OrderUID, order.Payment.Transaction,
-		order.Locale, order.InternalSignature, order.CustomerID, order.DeliveryService,
-		order.Shardkey, order.SmID, order.DateCreated, order.OofShard)
-	if err != nil {
-		return fmt.Errorf("%s: insert orders: %w", op, err)
-	}
-
-	// 4. Items
-	for _, item := range order.Items {
-		_, err = tx.Exec(`
-            INSERT INTO items (
-                order_uid, chrt_id, track_number, price, rid, name, sale,
-                size, total_price, nm_id, brand, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`, // уникальный ключ, предположительно
-			order.OrderUID, item.ChrtID, item.TrackNumber, item.Price, item.Rid,
-			item.Name, item.Sale, item.Size, item.TotalPrice, item.NmID, item.Brand, item.Status)
-		if err != nil {
-			return fmt.Errorf("%s: insert item %v: %w", op, item.ChrtID, err)
-		}
+		return fmt.Errorf("%s: insert statement: %w", op, err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("%s: commit transaction: %w", op, err)
+		return fmt.Errorf("%s: commit: %w", op, err)
 	}
 
 	return nil
 }
 
-// GetOrder retrieves an order by its ID from the database.
-func (s *Storage) GetOrder(orderID string) (models.Order, error) {
-	const op = "storage.postgres.GetOrder"
+// GetStatement получает одно обращение по id
+func (s *Storage) GetStatement(id int) (models.Statement, error) {
+	const op = "storage.postgres.GetStatement"
 
-	// 1. Orders
-	var order models.Order
-	err := s.db.QueryRow(`
-		SELECT order_uid, track_number, entry, payment_transaction, locale, internal_signature, customer_id, 
-				delivery_service, shardkey, sm_id, date_created, oof_shard
-		FROM orders WHERE order_uid = $1`, orderID).Scan(
-		&order.OrderUID, &order.TrackNumber, &order.Entry, &order.Payment.Transaction, &order.Locale,
-		&order.InternalSignature, &order.CustomerID, &order.DeliveryService,
-		&order.Shardkey, &order.SmID, &order.DateCreated, &order.OofShard)
+	var stmt models.Statement
+
+	ctx := context.Background()
+	err := s.db.QueryRowContext(ctx, `
+	SELECT 
+	id,
+	source,
+	district,
+	category,
+	subcategory,
+	created_at,
+	status,
+	description,
+	created_at_full
+	FROM statements
+	WHERE id = $1`,
+		id,
+	).Scan(
+		&stmt.StatementUID,
+		&stmt.Source,
+		&stmt.District,
+		&stmt.Category,
+		&stmt.Subcategory,
+		&stmt.CreatedAt,
+		&stmt.Status,
+		&stmt.Description,
+	)
 	if err != nil {
-		return models.Order{}, fmt.Errorf("%s: get orders: %w", op, err)
-	}
-
-	// 2. Delivery
-	err = s.db.QueryRow(`
-		SELECT name, phone, zip, city, address, region, email
-		FROM delivery WHERE order_uid = $1`, orderID).Scan(
-		&order.Delivery.Name, &order.Delivery.Phone, &order.Delivery.Zip,
-		&order.Delivery.City, &order.Delivery.Address, &order.Delivery.Region,
-		&order.Delivery.Email)
-	if err != nil {
-		return models.Order{}, fmt.Errorf("%s: get delivery: %w", op, err)
-	}
-
-	// 3. Payment
-	err = s.db.QueryRow(`
-		SELECT request_id, currency, provider, amount, payment_dt, 
-				bank, delivery_cost, goods_total, custom_fee
-		FROM payment WHERE transaction = $1`, order.Payment.Transaction).Scan(
-		&order.Payment.RequestID, &order.Payment.Currency,
-		&order.Payment.Provider, &order.Payment.Amount, &order.Payment.PaymentDt,
-		&order.Payment.Bank, &order.Payment.DeliveryCost, &order.Payment.GoodsTotal,
-		&order.Payment.CustomFee)
-	if err != nil {
-		return models.Order{}, fmt.Errorf("%s: get payment: %w", op, err)
-	}
-
-	// 4. Items
-	rows, err := s.db.Query(`
-		SELECT chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status
-		FROM items WHERE order_uid = $1`, orderID)
-	if err != nil {
-		return models.Order{}, fmt.Errorf("%s: get items: %w", op, err)
-	}
-	defer rows.Close()
-
-	order.Items = []models.Item{}
-	for rows.Next() {
-		var item models.Item
-		if err := rows.Scan(&item.ChrtID, &item.TrackNumber, &item.Price, &item.Rid,
-			&item.Name, &item.Sale, &item.Size, &item.TotalPrice,
-			&item.NmID, &item.Brand, &item.Status); err != nil {
-			return models.Order{}, fmt.Errorf("%s: get items: %w", op, err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.Statement{}, fmt.Errorf("%s: statement not found (id=%d)", op, id)
 		}
-		order.Items = append(order.Items, item)
+		return models.Statement{}, fmt.Errorf("%s: query: %w", op, err)
 	}
 
-	return order, nil
+	return stmt, nil
 }
 
 // Close closes the underlying database connection.

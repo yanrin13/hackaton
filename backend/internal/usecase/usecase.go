@@ -6,23 +6,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
-	"WB/internal/lib/validator"
-	"WB/internal/models"
+	"hack/internal/lib/validator"
+	"hack/internal/models"
 )
 
-// OrderRepository defines methods for persistent order storage.
-type OrderRepository interface {
+type StatementRepository interface {
 	NewStatement(statement models.Statement) error
-	GetStatement(statementID string) (models.Order, error)
+	GetStatement(statementID int) (models.Statement, error)
 }
 
-// CacheRepository defines methods for caching orders (e.g., Redis).
 type CacheRepository interface {
-	GetOrder(ctx context.Context, statementUID string) ([]byte, error)
-	SetOrder(ctx context.Context, statementUID string, data []byte, ttl time.Duration) error
-	DeleteOrder(ctx context.Context, statementUID string) error
+	GetStatement(ctx context.Context, statementUID int) ([]byte, error)
+	SetStatement(ctx context.Context, statementUID int, data []byte, ttl time.Duration) error
+	DeleteStatement(ctx context.Context, statementUID int) error
 }
 
 // MessageBroker defines methods for sending messages to Kafka.
@@ -31,17 +30,17 @@ type MessageBroker interface {
 	Close() error
 }
 
-// OrderUseCase contains dependencies and implements order-related use cases.
-type OrderUseCase struct {
-	orderRepo     OrderRepository
+// StatementUseCase contains dependencies and implements order-related use cases.
+type StatementUseCase struct {
+	statementRepo StatementRepository
 	cacheRepo     CacheRepository
 	messageBroker MessageBroker
 }
 
-// NewOrderUseCase creates a new instance of OrderUseCase with required dependencies.
-func NewOrderUseCase(orderRepo OrderRepository, cacheRepo CacheRepository, messageBroker MessageBroker) *OrderUseCase {
-	return &OrderUseCase{
-		orderRepo:     orderRepo,
+// NewStatementUseCase creates a new instance of StatementUseCase with required dependencies.
+func NewStatementUseCase(statementRepo StatementRepository, cacheRepo CacheRepository, messageBroker MessageBroker) *StatementUseCase {
+	return &StatementUseCase{
+		statementRepo: statementRepo,
 		cacheRepo:     cacheRepo,
 		messageBroker: messageBroker,
 	}
@@ -49,20 +48,35 @@ func NewOrderUseCase(orderRepo OrderRepository, cacheRepo CacheRepository, messa
 
 // CreateOrder validates the order and sends it to Kafka for asynchronous processing.
 // It does not wait for persistence — that's handled by the consumer.
-func (uc *OrderUseCase) CreateStatement(ctx context.Context, order models.Order) error {
+func (uc *StatementUseCase) CreateStatement(ctx context.Context, statement models.Statement) error {
 	const op = "usecase.CreateStatement"
 
-	if err := validator.ValidateStatement(&order); err != nil {
+	if err := validator.ValidateStatement(&statement); err != nil {
 		return fmt.Errorf("%s: validator: %w", op, err)
 	}
 
-	orderJSON, err := json.Marshal(order)
+	statementJSON, err := json.Marshal(statement)
 	if err != nil {
 		return fmt.Errorf("%s: json marshal err: %w", op, err)
 	}
 
-	if err := uc.messageBroker.Send(ctx, order.OrderUID, orderJSON); err != nil {
-		return fmt.Errorf("%s: kafka producer send err: %w", op, err)
+	key := strconv.Itoa(statement.StatementUID)
+
+	if err := uc.messageBroker.Send(ctx, key, statementJSON); err != nil {
+
+	}
+	//TODO ErrorIS
+	if _, err := uc.statementRepo.GetStatement(statement.StatementUID); err == nil {
+		return nil // order already exists
+	}
+
+	if err := uc.statementRepo.NewStatement(statement); err != nil {
+		return fmt.Errorf("%s: failed to save statement to repository: %w", op, err)
+	}
+
+	// Update cache
+	if statementJSON, marshalErr := json.Marshal(statement); marshalErr == nil {
+		uc.cacheRepo.SetStatement(ctx, statement.StatementUID, statementJSON, 24*time.Hour)
 	}
 
 	return nil
@@ -70,21 +84,21 @@ func (uc *OrderUseCase) CreateStatement(ctx context.Context, order models.Order)
 
 // GetOrder retrieves an order by UID, first checking cache, then database.
 // On successful DB fetch, it updates the cache.
-func (uc *OrderUseCase) GetStatement(ctx context.Context, orderUID string) (models.Order, error) {
+func (uc *StatementUseCase) GetStatement(ctx context.Context, statementUID int) (models.Statement, error) {
 	const op = "usecase.GetStatement"
 
-	cached, err := uc.cacheRepo.GetStatement(ctx, orderUID)
+	cached, err := uc.cacheRepo.GetStatement(ctx, statementUID)
 	if err == nil && len(cached) > 0 {
 		var statement models.Statement
 		if jsonErr := json.Unmarshal(cached, &statement); jsonErr == nil {
 			return statement, nil
 		}
-		uc.cacheRepo.DeleteOrder(ctx, statementUID)
+		uc.cacheRepo.DeleteStatement(ctx, statementUID)
 	}
 
-	statement, err := uc.orderRepo.GetStatement(statementUID)
+	statement, err := uc.statementRepo.GetStatement(statementUID)
 	if err != nil {
-		return models.Order{}, fmt.Errorf("%s: orderRepo get order: %w", op, err)
+		return models.Statement{}, fmt.Errorf("%s: orderRepo get order: %w", op, err)
 	}
 
 	statementJSON, marshalErr := json.Marshal(statement)
@@ -94,32 +108,3 @@ func (uc *OrderUseCase) GetStatement(ctx context.Context, orderUID string) (mode
 
 	return statement, nil
 }
-
-// HandleMessage processes incoming Kafka message with order data.
-// It saves the order to DB if not exists and updates cache.
-// Used by Kafka consumer.
-func (uc *OrderUseCase) HandleMessage(ctx context.Context, value []byte) error {
-	const op = "usecase.HandleMessage"
-
-	var order models.Order
-	if err := json.Unmarshal(value, &order); err != nil {
-		return fmt.Errorf("%s: failed to unmarshal message: %w", op, err)
-	}
-
-	// Avoid duplicates
-	if _, err := uc.orderRepo.GetOrder(order.OrderUID); err == nil {
-		return nil // order already exists
-	}
-
-	if err := uc.orderRepo.NewOrder(order); err != nil {
-		return fmt.Errorf("%s: failed to save order to repository: %w", op, err)
-	}
-
-	// Update cache
-	if orderJSON, marshalErr := json.Marshal(order); marshalErr == nil {
-		uc.cacheRepo.SetOrder(ctx, order.OrderUID, orderJSON, 24*time.Hour)
-	}
-
-	return nil
-}
-
