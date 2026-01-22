@@ -56,7 +56,7 @@ export default function SideBar() {
                     onClose={() => setRequestOpen(false)}
                 />
             )}
-            {mapOpen && <Content /> || <Map/>}
+            {mapOpen && <Map/> || <Content />}
         </div>
         
     )

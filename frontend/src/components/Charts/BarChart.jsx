@@ -36,11 +36,11 @@ export default function BarChart() {
                 data={{
                     labels: months,
                     datasets: [{
-                        "label": "Пользователи",
+                        "label": "Проблемы",
                         "data": data1
                     },
                     {
-                        "label": "Доход",
+                        "label": "Решения",
                         "data": data2
                     }
                     ],
