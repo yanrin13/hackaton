@@ -14,8 +14,10 @@ import (
 )
 
 type StatementRepository interface {
-	NewStatement(statement models.Statement) error
+	NewStatement(statements []models.Statement) error
 	GetStatement(statementID int) (models.Statement, error)
+	GetAllStatements(ctx context.Context) ([]models.Statement, error)
+	GetCategoriesAnalitic(ctx context.Context) (map[string]int, error)
 }
 
 type CacheRepository interface {
@@ -48,35 +50,28 @@ func NewStatementUseCase(statementRepo StatementRepository, cacheRepo CacheRepos
 
 // CreateOrder validates the order and sends it to Kafka for asynchronous processing.
 // It does not wait for persistence — that's handled by the consumer.
-func (uc *StatementUseCase) CreateStatement(ctx context.Context, statement models.Statement) error {
+func (uc *StatementUseCase) CreateStatement(ctx context.Context, statements []models.Statement) error {
 	const op = "usecase.CreateStatement"
 
-	if err := validator.ValidateStatement(&statement); err != nil {
-		return fmt.Errorf("%s: validator: %w", op, err)
+	for _, statement := range statements {
+		if err := validator.ValidateStatement(&statement); err != nil {
+			return fmt.Errorf("%s: validator: %w", op, err)
+		}
 	}
-
-	statementJSON, err := json.Marshal(statement)
+	statementJSON, err := json.Marshal(statements)
 	if err != nil {
 		return fmt.Errorf("%s: json marshal err: %w", op, err)
 	}
+	if len(statements) == 1 {
+		key := strconv.Itoa(statements[0].StatementUID)
 
-	key := strconv.Itoa(statement.StatementUID)
+		if err := uc.messageBroker.Send(ctx, key, statementJSON); err != nil {
 
-	if err := uc.messageBroker.Send(ctx, key, statementJSON); err != nil {
-
-	}
-	//TODO ErrorIS
-	if _, err := uc.statementRepo.GetStatement(statement.StatementUID); err == nil {
-		return nil // order already exists
+		}
 	}
 
-	if err := uc.statementRepo.NewStatement(statement); err != nil {
+	if err := uc.statementRepo.NewStatement(statements); err != nil {
 		return fmt.Errorf("%s: failed to save statement to repository: %w", op, err)
-	}
-
-	// Update cache
-	if statementJSON, marshalErr := json.Marshal(statement); marshalErr == nil {
-		uc.cacheRepo.SetStatement(ctx, statement.StatementUID, statementJSON, 24*time.Hour)
 	}
 
 	return nil
@@ -107,4 +102,26 @@ func (uc *StatementUseCase) GetStatement(ctx context.Context, statementUID int) 
 	}
 
 	return statement, nil
+}
+
+func (uc *StatementUseCase) GetAllStatements(ctx context.Context) ([]models.Statement, error) {
+	const op = "usecase.GetStatement"
+
+	statements, err := uc.statementRepo.GetAllStatements(ctx)
+	if err != nil {
+		return []models.Statement{}, fmt.Errorf("%s: orderRepo get order: %w", op, err)
+	}
+
+	return statements, nil
+}
+
+func (uc *StatementUseCase) GetCategoriesAnalitic(ctx context.Context) (map[string]int, error) {
+	const op = "usecase.GetStatement"
+
+	analitic, err := uc.statementRepo.GetCategoriesAnalitic(ctx)
+	if err != nil {
+		return map[string]int{}, fmt.Errorf("%s: orderRepo get order: %w", op, err)
+	}
+
+	return analitic, nil
 }

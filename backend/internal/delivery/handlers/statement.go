@@ -20,7 +20,7 @@ import (
 // It decodes JSON request body, validates it via use case and returns appropriate response.
 func NewStatement(log *slog.Logger, statementUseCase *usecase.StatementUseCase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.order.NewOrder"
+		const op = "handlers.statement.NewStatement"
 
 		ctx := r.Context()
 
@@ -32,17 +32,15 @@ func NewStatement(log *slog.Logger, statementUseCase *usecase.StatementUseCase) 
 		)
 
 		if err := render.DecodeJSON(r.Body, &statements); err != nil {
-			log.Error("failed to unmarshal order", "op", op, "error", err)
+			log.Error("failed to unmarshal orstatementder", "op", op, "error", err)
 			render.JSON(w, r, resp.Error(err.Error()))
 			return
 		}
 
-		for _, statement := range statements {
-			if err := statementUseCase.CreateStatement(ctx, statement); err != nil {
-				log.Error("failed create order", "op", op, "error", err)
-				render.JSON(w, r, resp.Error(err.Error()))
-				return
-			}
+		if err := statementUseCase.CreateStatement(ctx, statements); err != nil {
+			log.Error("failed create statement", "op", op, "error", err)
+			render.JSON(w, r, resp.Error(err.Error()))
+			return
 		}
 
 		log.Info("statement creating success")
@@ -54,7 +52,7 @@ func NewStatement(log *slog.Logger, statementUseCase *usecase.StatementUseCase) 
 // It extracts order ID from URL parameters and returns the order or error.
 func GetStatement(log *slog.Logger, statementUseCase *usecase.StatementUseCase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handlers.order.GetOrder"
+		const op = "handlers.statement.GetStatement"
 
 		var statement models.Statement
 
@@ -73,12 +71,56 @@ func GetStatement(log *slog.Logger, statementUseCase *usecase.StatementUseCase) 
 
 		statement, err := statementUseCase.GetStatement(context.Background(), key)
 		if err != nil {
-			log.Error("failed to unmarshal order", "op", op, "error", err)
+			log.Error("failed to unmarshal statement", "op", op, "error", err)
 			render.JSON(w, r, resp.Error(err.Error()))
 			return
 		}
 
 		log.Info("statement getting success")
 		render.JSON(w, r, statement)
+	}
+}
+
+func GetAllStatements(log *slog.Logger, statementUseCase *usecase.StatementUseCase) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.statement.GetAllStatements"
+
+		var statements []models.Statement
+
+		log := log.With(
+			slog.String("op", op),
+			slog.String("request_id", middleware.GetReqID(r.Context())),
+		)
+
+		statements, err := statementUseCase.GetAllStatements(context.Background())
+		if err != nil {
+			log.Error("failed to unmarshal statement", "op", op, "error", err)
+			render.JSON(w, r, resp.Error(err.Error()))
+			return
+		}
+
+		log.Info("statement getting success")
+		render.JSON(w, r, statements)
+	}
+}
+
+func GetCategoriesAnalitic(log *slog.Logger, statementUseCase *usecase.StatementUseCase) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.analitic.GetCategoriesAnalitic"
+
+		log := log.With(
+			slog.String("op", op),
+			slog.String("request_id", middleware.GetReqID(r.Context())),
+		)
+
+		analitic, err := statementUseCase.GetCategoriesAnalitic(context.Background())
+		if err != nil {
+			log.Error("failed to unmarshal statement", "op", op, "error", err)
+			render.JSON(w, r, resp.Error(err.Error()))
+			return
+		}
+
+		log.Info("statement getting success")
+		render.JSON(w, r, analitic)
 	}
 }

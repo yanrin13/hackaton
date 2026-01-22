@@ -61,7 +61,7 @@ func runMigrations(db *sql.DB, migrationsPath string) error {
 	return nil
 }
 
-func (s *Storage) NewStatement(stmt models.Statement) error {
+func (s *Storage) NewStatement(statements []models.Statement) error {
 	const op = "storage.postgres.NewStatement"
 
 	ctx := context.Background()
@@ -70,25 +70,26 @@ func (s *Storage) NewStatement(stmt models.Statement) error {
 		return fmt.Errorf("%s: begin tx: %w", op, err)
 	}
 	defer tx.Rollback()
-
-	// Вставляем запись
-	_, err = tx.ExecContext(ctx, `
-	INSERT INTO statements (
-	source, district, category, subcategory,
-	created_at, status, description
-	) VALUES ($1, $2, $3, $4, $5, $6, $7)
-	ON CONFLICT DO NOTHING`,
-		stmt.Source,
-		stmt.District,
-		stmt.Category,
-		stmt.Subcategory,
-		stmt.CreatedAt,
-		stmt.Status,
-		stmt.Description,
-	)
-
-	if err != nil {
-		return fmt.Errorf("%s: insert statement: %w", op, err)
+	for _, stmt := range statements{
+		// Вставляем запись
+		_, err = tx.ExecContext(ctx, `
+		INSERT INTO statements (
+		source, district, category, subcategory,
+		created_at, status, description
+		) VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT DO NOTHING`,
+			stmt.Source,
+			stmt.District,
+			stmt.Category,
+			stmt.Subcategory,
+			stmt.CreatedAt,
+			stmt.Status,
+			stmt.Description,
+		)
+	
+		if err != nil {
+			return fmt.Errorf("%s: insert statement: %w", op, err)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -106,18 +107,17 @@ func (s *Storage) GetStatement(id int) (models.Statement, error) {
 
 	ctx := context.Background()
 	err := s.db.QueryRowContext(ctx, `
-	SELECT 
-	id,
-	source,
-	district,
-	category,
-	subcategory,
-	created_at,
-	status,
-	description,
-	created_at_full
-	FROM statements
-	WHERE id = $1`,
+		SELECT 
+		id,
+		source,
+		district,
+		category,
+		subcategory,
+		created_at,
+		status,
+		description,
+		FROM statements
+		WHERE id = $1`,
 		id,
 	).Scan(
 		&stmt.StatementUID,
@@ -137,6 +137,81 @@ func (s *Storage) GetStatement(id int) (models.Statement, error) {
 	}
 
 	return stmt, nil
+}
+
+func (s *Storage) GetAllStatements(ctx context.Context) ([]models.Statement, error) {
+	const op = "storage.postgres.GetStatement"
+
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT 
+		id,
+		source,
+		district,
+		category,
+		subcategory,
+		created_at,
+		status,
+		description
+		FROM statements`,
+	)	
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return []models.Statement{}, fmt.Errorf("%s: statements not found", op)
+		}
+		return []models.Statement{}, fmt.Errorf("%s: query: %w", op, err)
+	}
+
+	var statements []models.Statement
+	for rows.Next() {
+		var stmt models.Statement
+		err := rows.Scan(&stmt.StatementUID,
+			&stmt.Source,
+			&stmt.District,
+			&stmt.Category,
+			&stmt.Subcategory,
+			&stmt.CreatedAt,
+			&stmt.Status,
+			&stmt.Description,
+		)
+		if err != nil {
+			return []models.Statement{}, fmt.Errorf("%s: statements not found", op)
+		}
+		statements = append(statements, stmt)
+	}
+
+	return statements, nil
+}
+
+func (s *Storage) GetCategoriesAnalitic(ctx context.Context) (map[string]int, error) {
+	const op = "storage.postgres.GetStatement"
+
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT 
+		category, COUNT(category)
+		FROM statements
+		GROUP BY category
+		`,
+	)	
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return map[string]int{}, fmt.Errorf("%s: statements not found", op)
+		}
+		return map[string]int{}, fmt.Errorf("%s: query: %w", op, err)
+	}
+
+	analitic := make(map[string]int)
+	for rows.Next() {
+		key, value := "", 0
+		
+		err := rows.Scan(&key,&value)
+		if err != nil {
+			return map[string]int{}, fmt.Errorf("%s: statements not found", op)
+		}
+
+		analitic[key] = value
+	}
+
+	return analitic, nil
 }
 
 // Close closes the underlying database connection.

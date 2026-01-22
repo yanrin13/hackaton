@@ -78,8 +78,8 @@ func main() {
 	router.Post("/api/statement", handlers.NewStatement(log, orderUseCase))
 	router.Get("/api/statement/{id}", handlers.GetStatement(log, orderUseCase))
 
-	router.Post("/api/statement", handlers.NewStatement(log, orderUseCase))
-	router.Get("/api/statement/{id}", handlers.GetStatement(log, orderUseCase))
+	router.Get("/api/statement", handlers.GetAllStatements(log, orderUseCase))
+	router.Get("/api/analitic/categories", handlers.GetCategoriesAnalitic(log, orderUseCase))
 	
 	srv := &http.Server{
 		Addr:         cfg.Address,
