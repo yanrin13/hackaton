@@ -73,7 +73,7 @@ func (s *Storage) NewStatement(stmt models.Statement) error {
 
 	// Вставляем запись
 	_, err = tx.ExecContext(ctx, `
-	INSERT INTO statement (
+	INSERT INTO statements (
 	source, district, category, subcategory,
 	created_at, status, description
 	) VALUES ($1, $2, $3, $4, $5, $6, $7)

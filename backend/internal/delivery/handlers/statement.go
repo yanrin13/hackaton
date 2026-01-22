@@ -24,23 +24,25 @@ func NewStatement(log *slog.Logger, statementUseCase *usecase.StatementUseCase) 
 
 		ctx := r.Context()
 
-		var statement models.Statement
+		var statements []models.Statement
 
 		log := log.With(
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
 
-		if err := render.DecodeJSON(r.Body, &statement); err != nil {
+		if err := render.DecodeJSON(r.Body, &statements); err != nil {
 			log.Error("failed to unmarshal order", "op", op, "error", err)
 			render.JSON(w, r, resp.Error(err.Error()))
 			return
 		}
 
-		if err := statementUseCase.CreateStatement(ctx, statement); err != nil {
-			log.Error("failed create order", "op", op, "error", err)
-			render.JSON(w, r, resp.Error(err.Error()))
-			return
+		for _, statement := range statements {
+			if err := statementUseCase.CreateStatement(ctx, statement); err != nil {
+				log.Error("failed create order", "op", op, "error", err)
+				render.JSON(w, r, resp.Error(err.Error()))
+				return
+			}
 		}
 
 		log.Info("statement creating success")
