@@ -115,7 +115,7 @@ func (s *Storage) GetStatement(id int) (models.Statement, error) {
 		subcategory,
 		created_at,
 		status,
-		description,
+		description
 		FROM statements
 		WHERE id = $1`,
 		id,
