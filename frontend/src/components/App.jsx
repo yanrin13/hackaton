@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Content from './Content'
-import Map from './Map/Map'
-
+import MapComponent from './Map/Map'
+import { ToastContainer } from "react-toastify";
 import email from '../assets/email.svg'
 import phone from '../assets/phone.svg'
 import tg from '../assets/tg.svg'
@@ -9,24 +9,43 @@ import logo from '../assets/icon.svg'
 import LoginModal from './Modal/LoginModal'
 import RequestModal from './Modal/RequestModal'
 
-export default function SideBar() {
+export default function App() {
     const [mapOpen, setMapOpen] = useState(false)
     const [loginOpen, setLoginOpen] = useState(false)
     const [requestOpen, setRequestOpen] = useState(false)
-    // onClick={() => setLoginOpen(true)}
+
+    const [categoriesData, setCategoriesData] = useState({})
+    const [districtData, setDistrictData] = useState({})
+    const [periodData, setPeriodData] = useState({})
+
+    useEffect(() => {
+        fetch('http://localhost:8888/api/analitic/categories')
+            .then(r => r.json())
+            .then(setCategoriesData)
+            .catch(console.error)
+
+        fetch('http://localhost:8888/api/analitic/district')
+            .then(r => r.json())
+            .then(setDistrictData)
+            .catch(console.error)
+        fetch('http://localhost:8888/api/analitic/period')
+            .then(r => r.json())
+            .then(setPeriodData)
+            .catch(console.error)
+    }, [])
     return (
         <div className="content">
             <div className="sidebar">
                 <div className='sidebar__logowrap'>
                     <img className='sidebar__logo' src={logo} alt="логотип" />
-                    <h1 className='sidebar__title'>Город решений</h1>
+                    <h1 className='sidebar__name'>Город решений</h1>
                 </div>
                 <div className='sidebar__btn'
-                onClick={() => setMapOpen(!mapOpen)}>
-                    {mapOpen && 'Карта происшествий' || 'Статистика'}
+                    onClick={() => setMapOpen(!mapOpen)}>
+                    {mapOpen && 'Статистика' || 'Карта происшествий'}
                 </div>
                 <div className='sidebar__btn'
-                onClick={() => setRequestOpen(true)}
+                    onClick={() => setRequestOpen(true)}
                 >Оставить заявку</div>
                 <div className="sidebar__contacts">
                     <h2 className='contacts__title'>Контакты</h2>
@@ -46,18 +65,18 @@ export default function SideBar() {
                     </ul>
                 </div>
             </div>
-            {loginOpen && (
-                <LoginModal
-                    onClose={() => setLoginOpen(false)}
-                />
-            )}
             {requestOpen && (
                 <RequestModal
                     onClose={() => setRequestOpen(false)}
                 />
             )}
-            {mapOpen && <Map/> || <Content />}
+            {mapOpen ? <MapComponent /> : <Content
+                categoriesData={categoriesData}
+                districtData={districtData}
+                periodData={periodData}
+            />}
+            <ToastContainer />
         </div>
-        
+
     )
 }
