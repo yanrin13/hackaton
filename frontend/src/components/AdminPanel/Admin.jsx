@@ -37,7 +37,7 @@ export default function Admin() {
     return (
         <div className="task-panel">
             <div className="task-panel__header">
-                <h2>Панель задач</h2>
+                <h2>Заявки для рассмотрения</h2>
                 <label className="task-panel__import">
                     Импорт JSON
                     <input type="file" accept=".json" onChange={handleImport} />
@@ -57,13 +57,13 @@ export default function Admin() {
                                 className="task-panel__accept"
                                 onClick={() => handleAccept(task.id)}
                             >
-
+                                v
                             </button>
                             <button
                                 className="task-panel__reject"
                                 onClick={() => handleReject(task.id)}
                             >
-
+                                x
                             </button>
                         </div>
                     </div>

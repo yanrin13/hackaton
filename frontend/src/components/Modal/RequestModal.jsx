@@ -18,6 +18,31 @@ export default function RequestModal({ onClose }) {
         }
     }
 
+    const sendRequest = async () => {
+        const newRequest = [
+            {
+                source: "Город решений",
+                district: district,
+                category: problem,
+                subcategory: description,
+                status: "Новое",
+                description: `Обращение по теме: ${description}`,
+                admin_status: true,
+            }
+        ]
+
+        const res = await fetch("/api/statement", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(newRequest),
+        });
+
+        if (!res.ok) throw new Error("Ошибка отправки");
+    };
+
+
     const notify = () => toast.success(<span style={{ fontSize: 'clamp(0.8rem, 2vw, 1.2rem)' }}>
         Успешно отправлено! Спасибо
     </span>, {
@@ -42,52 +67,58 @@ export default function RequestModal({ onClose }) {
 
     return createPortal((<div className='overlay' onMouseDown={backgroundClick}>
         <div className='modal-window'>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
                 e.preventDefault();
-                if (!CheckAllInputs()) return
+                if (!CheckAllInputs()) return;
 
-                onClose()
-                notify()
+                try {
+                    await sendRequest();
+                    onClose();
+                    notify();
+                } catch {
+                    toast.error("Не удалось отправить заявку");
+                }
             }}>
                 <p>Район проблемы:</p>
                 <select className='modal-window__selection' value={district} onChange={e => setDistrict(e.target.value)}>
                     <option value="">Выберите район</option>
-                    <option value="admiralteysky">Адмиралтейский</option>
-                    <option value="vasileostrovsky">Василеостровский</option>
-                    <option value="vyborgsky">Выборгский</option>
-                    <option value="kalininsky">Калининский</option>
-                    <option value="kirovsky">Кировский</option>
-                    <option value="kolpinsky">Колпинский</option>
-                    <option value="krasnogvardeysky">Красногвардейский</option>
-                    <option value="krasnoselsky">Красносельский</option>
-                    <option value="kronshtadtsky">Кронштадтский</option>
-                    <option value="kurortny">Курортный</option>
-                    <option value="moskovsky">Московский</option>
-                    <option value="nevsky">Невский</option>
-                    <option value="petrogradsky">Петроградский</option>
-                    <option value="petrodvortsovy">Петродворцовый</option>
-                    <option value="primorsky">Приморский</option>
-                    <option value="pushkinsky">Пушкинский</option>
-                    <option value="frunzensky">Фрунзенский</option>
-                    <option value="tsentralny">Центральный</option>
+                    <option value="Адмиралтейский">Адмиралтейский</option>
+                    <option value="Василеостровский">Василеостровский</option>
+                    <option value="Выборгский">Выборгский</option>
+                    <option value="Калининский">Калининский</option>
+                    <option value="Кировский">Кировский</option>
+                    <option value="Колпинский">Колпинский</option>
+                    <option value="Красногвардейский">Красногвардейский</option>
+                    <option value="Красносельский">Красносельский</option>
+                    <option value="Кронштадтский">Кронштадтский</option>
+                    <option value="Курортный">Курортный</option>
+                    <option value="Московский">Московский</option>
+                    <option value="Невский">Невский</option>
+                    <option value="Петроградский">Петроградский</option>
+                    <option value="Петродворцовый">Петродворцовый</option>
+                    <option value="Приморский">Приморский</option>
+                    <option value="Пушкинский">Пушкинский</option>
+                    <option value="Фрунзенский">Фрунзенский</option>
+                    <option value="Центральный">Центральный</option>
                 </select>
 
                 <p>Категория проблемы:</p>
                 <select className='modal-window__selection' value={problem} onChange={e => setProblem(e.target.value)}>
                     <option value="">Выберите вид проблемы</option>
-                    <option value="parking">Парковки</option>
-                    <option value="transport">Транспорт</option>
-                    <option value="lighting">Освещение</option>
-                    <option value="housing_services">ЖКХ</option>
-                    <option value="improvement">Благоустройство</option>
-                    <option value="garbage">Мусор</option>
-                    <option value="noise">Шум</option>
+                    <option value="Парковки">Парковки</option>
+                    <option value="Транспорт">Транспорт</option>
+                    <option value="Освещение">Освещение</option>
+                    <option value="ЖКХ">ЖКХ</option>
+                    <option value="Благоустройство">Благоустройство</option>
+                    <option value="Мусор">Мусор</option>
+                    <option value="Шум">Шум</option>
                 </select>
 
                 <p>Дополнительное описание:</p>
                 <div className="input-wrapper">
-                    <input type="text"
-                        placeholder=""
+                    <input
+                        type="text"
+                        value={description}
                         onChange={(e) => setDescription(e.target.value)}
                     />
                 </div>
