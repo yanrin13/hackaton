@@ -6,6 +6,7 @@ import email from '../assets/email.svg'
 import phone from '../assets/phone.svg'
 import tg from '../assets/tg.svg'
 import logo from '../assets/icon.svg'
+import logo_dark from '../assets/icon_dark.svg'
 import RequestModal from './Modal/RequestModal'
 
 export default function App() {
@@ -65,7 +66,7 @@ export default function App() {
             </button>
             <div className={`sidebar ${open ? "sidebar--open" : ""}`}>
                 <div className='sidebar__logowrap'>
-                    <img className='sidebar__logo' src={logo} alt="логотип" />
+                    <img className='sidebar__logo' src={themeIsBlack &&  logo_dark || logo} alt="логотип" />
                     <h1 className='sidebar__name'>Город решений</h1>
                 </div>
                 <div className='sidebar__btn'

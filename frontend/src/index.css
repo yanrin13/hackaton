@@ -146,7 +146,7 @@ ul {
 .sidebar {
   width: clamp(220px, 25vw, 320px);
   min-width: 220px;
-  background-color: var();
+  background-color: var(--card-and-sidebar);
   padding: clamp(12px, 2vw, 24px);
   display: flex;
   flex-direction: column;
@@ -400,7 +400,6 @@ form {
   align-items: center;
   border: 1px solid var(--color4);
   background-color: var(--color4);
-  color: var(--text-color);
   border-radius: clamp(8px, 1vw, 10px);
   padding: 0 clamp(8px, 2vw, 10px);
   box-sizing: border-box;
@@ -458,6 +457,7 @@ form {
   flex: 1;
   border: none;
   outline: none;
+  color: var(--text-color);
   font-size: clamp(1rem, 2.2vw, 1.2rem);
   background: transparent;
   min-width: 0;
