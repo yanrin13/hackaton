@@ -73,7 +73,6 @@ export default function App() {
                     onClick={() => setMapOpen(!mapOpen)}>
                     {mapOpen && 'Статистика' || 'Карта происшествий'}
                 </div>
-
                 <div className='sidebar__btn'
                     onClick={() => {
                         setRequestOpen(true)

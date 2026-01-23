@@ -26,6 +26,11 @@
   --contacts: #ffffff;
 }
 
+::selection {
+  color: var(--color2);
+  background-color: var(--gradient) ;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -217,7 +222,7 @@ ul {
 
 .sidebar__contact p {
   color: var(--contacts);
-  font-size: 1.2rem;
+  font-size: clamp(0.9rem, 1vw, 1.2rem);
 }
 
 .charts {

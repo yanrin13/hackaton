@@ -17,7 +17,7 @@ export default function DonutChart({ data, theme }) {
 
     return (
         <div className="chart-area">
-            <h1 className='sidebar__title'>
+            <h1 className='sidebar__title' style={{marginBottom:'5px'}}>
                 Общее число жалоб: {total}
             </h1>
             <Doughnut

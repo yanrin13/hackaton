@@ -15,7 +15,7 @@ export default function LoginModal({onClose}) {
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        fetch('https://api.behired.ru/api/v1/auth/login', {
+        fetch('/api/auth/login', {
             method: "POST",
             credentials: 'include',
             headers: {

@@ -1,11 +1,19 @@
 import { useState, useEffect } from "react";
 import check from '../../assets/check.svg'
 import cross from '../../assets/cross.svg'
+import LoginModal from '../Modal/LoginModal'
 
 export default function Admin() {
+    const [showReg, setShowReg] = useState(false)
+
     const [tasks, setTasks] = useState([])
     useEffect(() => {
         fetch('api/statement')
+            .then(r => {
+                if (r.status > 200) {
+                    setShowReg(true)
+                }
+            })
             .then(r => r.json())
             .then(setTasks)
             .catch(console.error)
@@ -63,6 +71,8 @@ export default function Admin() {
         reader.readAsText(file);
     };
     return (
+
+        
         <div className="task-panel">
             <div className="task-panel__header">
                 <h2>Заявки для рассмотрения</h2>
@@ -71,7 +81,7 @@ export default function Admin() {
                     <input type="file" accept=".json" onChange={handleImport} />
                 </label>
             </div>
-
+            {showReg && <LoginModal onClose={() => setShowReg(false)}/>}
             <div className="task-panel__list">
                 {(!tasks || tasks.length === 0) ? (
                     <p className="task-panel__empty">Нет заявок</p>

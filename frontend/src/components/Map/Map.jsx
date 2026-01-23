@@ -4,7 +4,7 @@ import "@maptiler/sdk/dist/maptiler-sdk.css";
 import configData from "./config";
 import Box from "@mui/material/Box";
 
-export default function Map({ onMapReady }) {  // Добавили prop для передачи экземпляра карты
+export default function Map({ onMapReady}) {  // Добавили prop для передачи экземпляра карты
     maptilersdk.config.apiKey = configData.MAPTILER_API_KEY;
 
     useEffect(() => {
@@ -14,8 +14,6 @@ export default function Map({ onMapReady }) {  // Добавили prop для �
             center: [30.3609, 59.9311],
             zoom: 10,
         });
-
-
 
         map.on("load", async () => {
             try {
