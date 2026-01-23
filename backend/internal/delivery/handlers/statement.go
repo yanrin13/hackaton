@@ -231,3 +231,32 @@ func GetPeriodAnalitic(log *slog.Logger, statementUseCase *usecase.StatementUseC
 		render.JSON(w, r, analitic)
 	}
 }
+
+func GetRecomendations(log *slog.Logger, statementUseCase *usecase.StatementUseCase) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.analitic.GetRecomendations"
+
+		log := log.With(
+			slog.String("op", op),
+			slog.String("request_id", middleware.GetReqID(r.Context())),
+		)
+
+		query := r.URL.Query().Get("c")
+		count, err := strconv.Atoi(query)
+
+		if err != nil {
+			log.Error("failed convert count query param", "op", op, "error", err)
+			render.JSON(w, r, resp.Error(err.Error()))
+		}
+
+		recomendations, err := statementUseCase.GetRecomendations(context.Background(), count)
+		if err != nil {
+			log.Error("failed to  statement", "op", op, "error", err)
+			render.JSON(w, r, resp.Error(err.Error()))
+			return
+		}
+
+		log.Info("recomendations getting success")
+		render.JSON(w, r, recomendations)
+	}
+}

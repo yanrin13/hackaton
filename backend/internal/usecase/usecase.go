@@ -6,11 +6,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"hack/internal/lib/validator"
 	"hack/internal/models"
+
+	mistral "github.com/ua1984/mistral"
 )
 
 type StatementRepository interface {
@@ -19,9 +23,11 @@ type StatementRepository interface {
 	DeleteStatement(statementID int) error
 	UpdateStatement(ctx context.Context, statements []models.Statement) error
 	GetAllStatements(ctx context.Context) ([]models.Statement, error)
+
 	GetCategoriesAnalitic(ctx context.Context, district string) (map[string]int, error)
 	GetDistrictAnalitic(ctx context.Context) (map[string]int, error)
 	GetPeriodAnalitic(ctx context.Context) (map[string]int, error)
+	GetRecomendations(ctx context.Context, count int) ([]string, error)
 }
 
 type CacheRepository interface {
@@ -175,4 +181,37 @@ func (uc *StatementUseCase) GetPeriodAnalitic(ctx context.Context) (map[string]i
 	}
 
 	return analitic, nil
+}
+
+func (uc *StatementUseCase) GetRecomendations(ctx context.Context, count int) ([]string, error) {
+	const op = "usecase.GetRecomendations"
+	client := mistral.NewClient(os.Getenv(""))
+
+	resp, err := client.CreateChatCompletion(ctx, &mistral.ChatCompletionRequest{
+		Model: "devstral-latest",
+		Messages: []mistral.ChatMessage{
+			{Role: mistral.RoleUser, Content: "Hello!"},
+		},
+	})
+
+	if err != nil {
+		return []string{}, fmt.Errorf("%s: failed get recomendations: %w", op, err)
+	}
+
+	if len(resp.Choices) == 0 {
+		return []string{}, fmt.Errorf("%s: no choices in response", op)
+	}
+
+	responseText := resp.Choices[0].Message.Content.(string)
+
+	if responseText == "" {
+		return []string{}, nil
+	}
+
+	result := strings.Split(responseText, "|")
+	for i := range result {
+		result[i] = strings.TrimSpace(result[i])
+	}
+
+	return result, nil
 }

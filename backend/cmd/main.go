@@ -85,6 +85,7 @@ func main() {
 	router.Get("/api/analitic/categories/{district}", handlers.GetCategoriesAnalitic(log, orderUseCase))
 	router.Get("/api/analitic/period", handlers.GetPeriodAnalitic(log, orderUseCase))
 	router.Get("/api/analitic/district", handlers.GetDistrictAnalitic(log, orderUseCase))
+	router.Get("/api/analitic/recs", handlers.GetRecomendations(log, orderUseCase))
 
 	srv := &http.Server{
 		Addr:         cfg.Address,
