@@ -16,7 +16,8 @@ import (
 type StatementRepository interface {
 	NewStatement(statements []models.Statement) error
 	GetStatement(statementID int) (models.Statement, error)
-	UpdateStatement(ctx context.Context, statements []models.Statement) error 
+	DeleteStatement(statementID int) error
+	UpdateStatement(ctx context.Context, statements []models.Statement) error
 	GetAllStatements(ctx context.Context) ([]models.Statement, error)
 	GetCategoriesAnalitic(ctx context.Context, district string) (map[string]int, error)
 	GetDistrictAnalitic(ctx context.Context) (map[string]int, error)
@@ -97,7 +98,6 @@ func (uc *StatementUseCase) UpdateStatement(ctx context.Context, statements []mo
 	return nil
 }
 
-
 func (uc *StatementUseCase) GetStatement(ctx context.Context, statementUID int) (models.Statement, error) {
 	const op = "usecase.GetStatement"
 
@@ -121,6 +121,16 @@ func (uc *StatementUseCase) GetStatement(ctx context.Context, statementUID int) 
 	}
 
 	return statement, nil
+}
+
+func (uc *StatementUseCase) DeleteStatement(ctx context.Context, statementUID int) error {
+	const op = "usecase.DeleteStatement"
+
+	if err := uc.statementRepo.DeleteStatement(statementUID); err != nil {
+		return fmt.Errorf("%s: failed to delete statement (id=%d): %w", op, statementUID, err)
+	}
+
+	return nil
 }
 
 func (uc *StatementUseCase) GetAllStatements(ctx context.Context) ([]models.Statement, error) {
@@ -166,5 +176,3 @@ func (uc *StatementUseCase) GetPeriodAnalitic(ctx context.Context) (map[string]i
 
 	return analitic, nil
 }
-
-

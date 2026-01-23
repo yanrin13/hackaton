@@ -77,13 +77,14 @@ func main() {
 
 	router.Post("/api/statement", handlers.NewStatement(log, orderUseCase))
 	router.Get("/api/statement", handlers.GetAllStatements(log, orderUseCase))
+
 	router.Patch("/api/statement/{id}", handlers.UpdateStatement(log, orderUseCase))
 	router.Get("/api/statement/{id}", handlers.GetStatement(log, orderUseCase))
+	router.Delete("/api/statement/{id}", handlers.DeleteStatement(log, orderUseCase))
 
 	router.Get("/api/analitic/categories/{district}", handlers.GetCategoriesAnalitic(log, orderUseCase))
 	router.Get("/api/analitic/period", handlers.GetPeriodAnalitic(log, orderUseCase))
 	router.Get("/api/analitic/district", handlers.GetDistrictAnalitic(log, orderUseCase))
-
 
 	srv := &http.Server{
 		Addr:         cfg.Address,

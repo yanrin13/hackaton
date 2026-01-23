@@ -142,6 +142,32 @@ func (s *Storage) GetStatement(id int) (models.Statement, error) {
 	return stmt, nil
 }
 
+func (s *Storage) DeleteStatement(id int) error {
+	const op = "storage.postgres.DeleteStatement"
+
+	ctx := context.Background()
+	res, err := s.db.ExecContext(ctx, `
+		DELETE 
+		FROM statements
+		WHERE id = $1`,
+		id,
+	)
+	if err != nil {
+		return fmt.Errorf("%s: exec: %w", op, err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: rows affected: %w", op, err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("%s: statement not found (id=%d)", op, id)
+	}
+
+	return nil
+}
+
 func (s *Storage) UpdateStatement(ctx context.Context, statements []models.Statement) error {
 	const op = "storage.postgres.UpdateStatement"
 
@@ -234,7 +260,7 @@ func (s *Storage) GetCategoriesAnalitic(ctx context.Context, district string) (m
 
 	var query string
 
-	if district == "1"{
+	if district == "1" {
 		query = `
 			SELECT 
 			category, COUNT(category)
@@ -243,7 +269,7 @@ func (s *Storage) GetCategoriesAnalitic(ctx context.Context, district string) (m
 				AND district != $1	
 			GROUP BY category
 			`
-	} else{
+	} else {
 		query = `
 			SELECT 
 			category, COUNT(category)
@@ -254,7 +280,7 @@ func (s *Storage) GetCategoriesAnalitic(ctx context.Context, district string) (m
 			`
 	}
 
-	rows, err := s.db.QueryContext(ctx,  query, district)
+	rows, err := s.db.QueryContext(ctx, query, district)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return map[string]int{}, fmt.Errorf("%s: statements not found", op)

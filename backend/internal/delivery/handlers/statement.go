@@ -111,6 +111,35 @@ func UpdateStatement(log *slog.Logger, statementUseCase *usecase.StatementUseCas
 	}
 }
 
+func DeleteStatement(log *slog.Logger, statementUseCase *usecase.StatementUseCase) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		const op = "handlers.statement.DeleteStatement"
+
+		log := log.With(
+			slog.String("op", op),
+			slog.String("request_id", middleware.GetReqID(r.Context())),
+		)
+
+		//error track
+		statementUID := chi.URLParam(r, "id")
+		if statementUID == "" {
+			http.Error(w, "id parameter missing", http.StatusBadRequest)
+			return
+		}
+		key, _ := strconv.Atoi(statementUID)
+
+		err := statementUseCase.DeleteStatement(context.Background(), key)
+		if err != nil {
+			log.Error("failed to delete statement", "op", op, "error", err)
+			render.JSON(w, r, resp.Error(err.Error()))
+			return
+		}
+
+		log.Info("statement delete success")
+		render.JSON(w, r, resp.OK())
+	}
+}
+
 func GetAllStatements(log *slog.Logger, statementUseCase *usecase.StatementUseCase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.statement.GetAllStatements"
@@ -160,7 +189,6 @@ func GetCategoriesAnalitic(log *slog.Logger, statementUseCase *usecase.Statement
 		render.JSON(w, r, analitic)
 	}
 }
-
 
 func GetDistrictAnalitic(log *slog.Logger, statementUseCase *usecase.StatementUseCase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
