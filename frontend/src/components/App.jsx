@@ -20,6 +20,8 @@ export default function App() {
 
     const [adminOpen, setAdminOpen] = useState(false);
 
+    const [open, setOpen] = useState(false)
+
     useEffect(() => {
         fetch('api/analitic/district')
             .then(r => r.json())
@@ -42,7 +44,14 @@ export default function App() {
     }, [selectedDistrict]);
     return (
         <div className="content">
-            <div className="sidebar">
+            <button class="burger" onClick={() => {
+                setOpen(prev => !prev)
+            }} aria-label="Open menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div className={`sidebar ${open ? "sidebar--open" : ""}`}>
                 <div className='sidebar__logowrap'>
                     <img className='sidebar__logo' src={logo} alt="логотип" />
                     <h1 className='sidebar__name'>Город решений</h1>
@@ -52,7 +61,10 @@ export default function App() {
                     {mapOpen && 'Статистика' || 'Карта происшествий'}
                 </div>
                 <div className='sidebar__btn'
-                    onClick={() => setRequestOpen(true)}
+                    onClick={() => {
+                        setRequestOpen(true)
+                        if (open === true) setOpen(false)
+                    }}
                 >Оставить заявку</div>
                 <div className='sidebar__btn' onClick={() => setAdminOpen(true)}>
                     Админ панель

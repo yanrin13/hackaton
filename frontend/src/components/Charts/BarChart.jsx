@@ -7,7 +7,7 @@ export default function BarChart({ data }) {
     const [to, setTo] = useState("");
     const [labels, setLabels] = useState([]);
     const [values, setValues] = useState([]);
-    const [keys, setKeys] = useState([]); // хранит YYYY-MM для фильтра
+    const [keys, setKeys] = useState([]);
 
     useEffect(() => {
         if (!data) return;
@@ -15,7 +15,7 @@ export default function BarChart({ data }) {
         const monthly = {};
         Object.entries(data).forEach(([date, value]) => {
             const [year, month] = date.split("-");
-            const key = `${year}-${month}`; // YYYY-MM
+            const key = `${year}-${month}`;
             monthly[key] = (monthly[key] || 0) + value;
         });
 
@@ -34,7 +34,6 @@ export default function BarChart({ data }) {
         setValues(newValues);
     }, [data]);
 
-    // Фильтруем по выбранному диапазону YYYY-MM
     const filteredLabels = labels.filter((_, idx) => {
         if (!from || !to) return true;
         return keys[idx] >= from && keys[idx] <= to;

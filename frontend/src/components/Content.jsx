@@ -14,7 +14,7 @@ export default function Content({ categoriesData, districtData, periodData, sele
                     <DonutChart data={categoriesData} />
                     <div className="charts__description">
                         <select
-                            className='modal-window__selection'
+                            className='charts__donut-btn'
                             style={{ maxWidth: '200px' }}
                             value={selectedDistrict}
                             onChange={e => setSelectedDistrict(e.target.value)}
